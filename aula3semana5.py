@@ -81,6 +81,7 @@ resultado = canal_online[canal_online > media_geral]
 print("Média geral:", media_geral)
 print("Vendas Online acima da média:", resultado)
 '''
+'''
 #1
 vendas = np.array ([100, 250, 400, 750, 1200])
 vendas_com_iva = vendas * 1.12
@@ -101,3 +102,17 @@ p90 = np.percentile(v, 90)
 v[v > p90] = np.median(v)
 print(p90)
 print(v)
+'''
+precos = np.array([100,200,300])
+taxas = 1.15
+aplicado = precos * taxas
+print(aplicado)
+
+v1 = np.array([[500],[800],[1200]])
+v2 = np.array([50, 100, 150])
+novamatriz = v1 + v2
+print(novamatriz)
+
+v = np.array()
+normal = (v - v.mean(axis=0)) / v.std(axis=0)
+print(normal)

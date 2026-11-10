@@ -40,7 +40,13 @@ conexao = sqlite3.connect(caminho_banco)
 # venda vale 2991,00.
 
 sql_1 = """
--- escreva sua consulta aqui
+select f.venda_sk, t.ano, t.nome_mes, p.nome as produto, r.nome as regional, f.valor_venda
+    from fato_vendas as f
+    join dim_tempo as t on f.tempo_id = t.tempo_id
+    join dim_produto as p on f.produto_sk = p.produto_sk
+    join dim_regional as r on f.regional_sk = r.regional_sk
+    where f.valor_venda > (select avg(valor_venda) from fato_vendas)
+    order by valor_venda desc
 """
 # print(pd.read_sql_query(sql_1, conexao))
 
@@ -76,22 +82,29 @@ WHERE tipo = 'Cidade'
 GROUP BY uf
 ORDER BY vendas_acima_media DESC
 """
-print(pd.read_sql_query(sql_2a, conexao))
+# print(pd.read_sql_query(sql_2a, conexao))
 
 # b) Contagem por cidade
 # Copie o modelo e troque a coluna uf pela coluna cidade.
 # Confira: 5 cidades, com Joinville em primeiro (141 vendas).
 sql_2b = cte_vendas_acima + """
--- escreva aqui somente o SELECT
+SELECT cidade, COUNT(*) AS vendas_acima_media
+FROM vendas_acima
+WHERE tipo = 'Cidade'
+GROUP BY cidade
+ORDER BY vendas_acima_media DESC
 """
-# print(pd.read_sql_query(sql_2b, conexao))
+#print(pd.read_sql_query(sql_2b, conexao))
 
 # c) Contagem por região
 # Copie o modelo, use a coluna macrorregiao e apague o WHERE, porque todas
 # as vendas têm região.
 # Confira: 5 regiões, com Sul em primeiro (344 vendas).
 sql_2c = cte_vendas_acima + """
--- escreva aqui somente o SELECT
+SELECT macrorregiao AS regiao, COUNT(*) AS vendas_acima_media
+FROM vendas_acima
+GROUP BY macrorregiao
+ORDER BY vendas_acima_media DESC
 """
 # print(pd.read_sql_query(sql_2c, conexao))
 
@@ -113,8 +126,21 @@ sql_2c = cte_vendas_acima + """
 # Para pensar: você pediu 3 produtos com LIMIT 3. Por que só 2 aparecem?
 
 sql_3 = """
--- escreva sua consulta aqui
+    WITH top_produtos AS (
+        SELECT f.produto_sk, SUM(f.valor_venda) AS faturamento
+        FROM fato_vendas AS f
+        GROUP BY f.produto_sk
+        ORDER BY faturamento DESC
+        LIMIT 3
+    )
+    SELECT p.nome AS produto, t.ano, t.nome_mes, r.nome AS regional, f.valor_venda
+    FROM fato_vendas AS f
+    JOIN top_produtos AS tp ON f.produto_sk = tp.produto_sk
+    JOIN dim_produto AS p ON f.produto_sk = p.produto_sk
+    JOIN dim_tempo AS t ON f.tempo_id = t.tempo_id
+    JOIN dim_regional AS r ON f.regional_sk = r.regional_sk
+    ORDER BY p.nome, f.valor_venda DESC
 """
-# print(pd.read_sql_query(sql_3, conexao))
+print(pd.read_sql_query(sql_3, conexao))
 
 conexao.close()

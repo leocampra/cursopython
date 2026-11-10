@@ -255,10 +255,8 @@ def validar(brutos):
         SELECT
             (SELECT COUNT(*) FROM fato_vendas) AS vendas,
             (SELECT COUNT(*) FROM fato_metas) AS metas,
-            (SELECT COUNT(*) FROM auditoria_rejeitados
-              WHERE fonte = 'planilha') AS vendas_rejeitadas,
-            (SELECT COUNT(*) FROM auditoria_rejeitados
-              WHERE fonte = 'metas_mensais') AS metas_rejeitadas
+            (SELECT COUNT(*) FROM auditoria_rejeitados WHERE fonte = 'planilha') AS vendas_rejeitadas,
+            (SELECT COUNT(*) FROM auditoria_rejeitados WHERE fonte = 'metas_mensais') AS metas_rejeitadas
     """
     total = pd.read_sql_query(consulta, conexao).iloc[0]
 

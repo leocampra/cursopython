@@ -11,7 +11,6 @@ id	vendedor	produto	    valor
 SELECT
     id,
     vendedor,
-    produto,
     valor,
     ROW_NUMBER() OVER(
         ORDER BY valor DESC, id ASC
@@ -28,16 +27,14 @@ id	vendedor	valor	numero_linha
 
 #RANK() - Queremos classificar os vendedores de acordo com o valor de suas vendas individuais
 SELECT
-    id,
     vendedor,
-    produto,
     valor,
     RANK() OVER(
         ORDER BY valor DESC
     ) AS classificacao
 FROM vendas;
 
-vendedor	valor	classificação
+vendedor	valor	classificacao
 Ana	        3000	1
 João	    3000	1
 Maria	    1500	3

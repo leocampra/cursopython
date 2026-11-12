@@ -57,7 +57,7 @@ SELECT ROW_NUMBER() OVER (ORDER BY valor_venda DESC, venda_sk) AS posicao,
 FROM vendas_completas
 ORDER BY posicao
 """
-print(pd.read_sql_query(sql_1a, conexao).head(10))
+#print(pd.read_sql_query(sql_1a, conexao).head(10))
 
 # b) Numerar as vendas dentro de cada produto
 # Copie o modelo e acrescente PARTITION BY produto dentro do OVER, antes do
@@ -67,7 +67,12 @@ print(pd.read_sql_query(sql_1a, conexao).head(10))
 # Confira: 716 linhas. A posição 1 de Paçoca vale 2991,00 e a posição 1 de
 # Rolhas vale 2979,00. A última posição de Paçoca é 360 e a de Rolhas é 356.
 sql_1b = cte_vendas + """
--- escreva aqui somente o SELECT
+SELECT ROW_NUMBER() OVER (PARTITION BY produto ORDER BY valor_venda DESC, venda_sk) AS posicao,
+       produto,
+       regional,
+       valor_venda
+FROM vendas_completas
+ORDER BY produto, posicao
 """
 # print(pd.read_sql_query(sql_1b, conexao))
 
@@ -92,7 +97,7 @@ sql_2 = cte_vendas + """
 SELECT regional,
        valor_venda,
        ROW_NUMBER() OVER (ORDER BY valor_venda DESC, venda_sk) AS numero_linha,
-       ______ AS ranking
+       RANK() OVER (ORDER BY valor_venda DESC) AS ranking
 FROM vendas_completas
 WHERE produto = 'Paçoca'
 ORDER BY numero_linha
@@ -120,12 +125,12 @@ WITH faturamento_mes AS (
 sql_3a = cte_meses + """
 SELECT nome_mes,
        faturamento,
-       SUM(faturamento) OVER () AS total_ano,
+       SUM(faturamento) OVER() AS total_ano,
        ROUND(faturamento * 100.0 / SUM(faturamento) OVER (), 2) AS participacao
 FROM faturamento_mes
 ORDER BY tempo_id
 """
-print(pd.read_sql_query(sql_3a, conexao))
+#print(pd.read_sql_query(sql_3a, conexao))
 
 # b) Faturamento acumulado mês a mês
 # Mostre nome_mes, faturamento e uma coluna acumulado. Use a mesma soma do
@@ -135,8 +140,12 @@ print(pd.read_sql_query(sql_3a, conexao))
 # Confira: Janeiro acumula 21150,00, Fevereiro acumula 51763,00 e Dezembro
 # acumula 340477,00, que é o total do ano.
 sql_3b = cte_meses + """
--- escreva aqui somente o SELECT
+SELECT nome_mes,
+       faturamento,
+       SUM(faturamento) OVER (ORDER BY tempo_id) AS acumulado
+FROM faturamento_mes
+ORDER BY tempo_id
 """
-# print(pd.read_sql_query(sql_3b, conexao))
+#print(pd.read_sql_query(sql_3b, conexao))
 
 conexao.close()

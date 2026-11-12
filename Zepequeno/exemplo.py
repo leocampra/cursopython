@@ -25,7 +25,8 @@ id	vendedor	valor	numero_linha
 2	João	    100	    5
 6	Ana	        100	    6
 
-#RANK() - Queremos classificar os vendedores de acordo com o valor de suas vendas individuais
+# RANK() - Queremos classificar os vendedores de acordo com o valor de suas 
+# vendas individuais
 SELECT
     vendedor,
     valor,
@@ -42,7 +43,8 @@ Ana	        200	    4
 João	    100	    5
 Ana	        100	    5
 
-#DENSE_RANK() - Queremos classificar os vendedores de acordo com o valor de suas vendas individuais sem pular posições
+#DENSE_RANK() - Queremos classificar os vendedores de acordo com o valor de 
+# suas vendas individuais sem pular posições
 
 SELECT
     id,
@@ -82,7 +84,8 @@ Maria	    Monitor	    1500	1500
 João	    Notebook	3000	3100
 Ana	        Mouse	    100	    3300
 
-# Exemplo B: Soma acumulada (Running Total) - Queremos acompanhar como as vendas vão acumulando ao longo dos registros.
+# Exemplo B: Soma acumulada (Running Total) - Queremos acompanhar como as vendas 
+# vão acumulando ao longo dos registros.
 
 SELECT
     id,

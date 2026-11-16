@@ -84,8 +84,8 @@ JOIN dim_produto  AS p ON f.produto_sk = p.produto_sk
 JOIN dim_canal    AS c ON f.canal_sk = c.canal_sk
 JOIN dim_regional AS r ON f.regional_sk = r.regional_sk;
 """
-executar(sql_1a)
-print(pd.read_sql_query("SELECT * FROM vw_vendas_completas LIMIT 5", conexao))
+#executar(sql_1a)
+#print(pd.read_sql_query("SELECT * FROM vw_vendas_completas LIMIT 5", conexao))
 
 # b) Usar a view: faturamento por regional
 # Consulte a view vw_vendas_completas (sem nenhum JOIN!) e mostre, para
@@ -96,9 +96,14 @@ print(pd.read_sql_query("SELECT * FROM vw_vendas_completas LIMIT 5", conexao))
 # Confira: 11 linhas. Joinville em primeiro, com 254 vendas e 539695,47.
 # Curitiba em último, com 3 vendas e 5350,00.
 sql_1b = """
-
+SELECT regional,
+       COUNT(*) AS qtd_vendas,
+       ROUND(SUM(valor_venda), 2) AS faturamento
+FROM vw_vendas_completas
+GROUP BY regional
+ORDER BY faturamento DESC;
 """
-# print(pd.read_sql_query(sql_1b, conexao))
+#print(pd.read_sql_query(sql_1b, conexao))
 
 # ---------------------------------------------------------------------
 # EXERCÍCIO 2 — View de faturamento por mês
@@ -117,7 +122,18 @@ sql_1b = """
 # Confira: Janeiro de 2025 tem 11 vendas e 21150,00. Outubro de 2025 é o
 # melhor mês do ano, com 22 vendas e 45280,00.
 sql_2 = """
+DROP VIEW IF EXISTS vw_faturamento_mensal;
 
+CREATE VIEW vw_faturamento_mensal AS
+SELECT tempo_id,
+       ano,
+       nome_mes,
+       COUNT(venda_sk) AS qtd_vendas,
+       ROUND(SUM(valor_venda), 2) AS faturamento
+FROM vw_vendas_completas
+GROUP BY tempo_id,
+         ano,
+         nome_mes;
 """
 # executar(sql_2)
 # print(pd.read_sql_query(
@@ -128,7 +144,7 @@ sql_2 = """
 # Para pensar: a dim_tempo tem 60 meses (2022 a 2026), mas a view
 # vw_faturamento_mensal tem só 48 linhas. Rode a consulta abaixo e explique
 # por que faltam 12 meses.
-# print(pd.read_sql_query("SELECT COUNT(*) AS meses FROM vw_faturamento_mensal", conexao))
+# print(pd.read_sql_query("SELECT COUNT(*) AS meses, ano FROM vw_faturamento_mensal GROUP BY ano ORDER BY ano", conexao))
 
 # ---------------------------------------------------------------------
 # EXERCÍCIO 3 — View de resumo por canal de venda
@@ -156,10 +172,20 @@ sql_2 = """
 # Para pensar: o e-commerce fatura quase o mesmo que a loja física. Por que
 # a margem dele é tão menor?
 sql_3 = """
+DROP VIEW IF EXISTS vw_resumo_canal;
 
+CREATE VIEW vw_resumo_canal AS
+SELECT canal,
+       COUNT(venda_sk) AS qtd_vendas,
+       ROUND(SUM(valor_venda), 2) AS faturamento,
+       ROUND(SUM(comissao), 2) AS comissao,
+       ROUND(SUM(margem_estimada), 2) AS margem,
+       ROUND(SUM(margem_estimada) * 100.0 / SUM(valor_venda), 2) AS margem_pct
+FROM vw_vendas_completas
+GROUP BY canal;
 """
-# executar(sql_3)
-# print(pd.read_sql_query("SELECT * FROM vw_resumo_canal", conexao))
+#executar(sql_3)
+#print(pd.read_sql_query("SELECT * FROM vw_resumo_canal", conexao))
 
 # ---------------------------------------------------------------------
 # EXERCÍCIO 4 — Meta x realizado (view em cima de view)
@@ -175,7 +201,14 @@ sql_3 = """
 # Confira: em Janeiro de 2025 (tempo_id = 202501), Joinville realizou
 # 7895,00.
 sql_4a = """
+DROP VIEW IF EXISTS vw_realizado_regional_mes;
 
+CREATE VIEW vw_realizado_regional_mes AS
+SELECT tempo_id,
+       regional,
+       ROUND(SUM(valor_venda), 2) AS realizado
+FROM vw_vendas_completas
+GROUP BY tempo_id, regional;
 """
 # executar(sql_4a)
 # print(pd.read_sql_query(
@@ -199,12 +232,12 @@ SELECT m.tempo_id,
        r.nome                  AS regional,
        m.valor_meta            AS meta,
        COALESCE(v.realizado, 0) AS realizado,
-       ROUND(COALESCE(v.realizado, 0) * 100.0 / ______, 2) AS atingimento_pct
+       ROUND(COALESCE(v.realizado, 0) * 100.0 / m.valor_meta, 2) AS atingimento_pct
 FROM fato_metas AS m
 JOIN dim_regional AS r ON m.regional_sk = r.regional_sk
-______ vw_realizado_regional_mes AS v
+LEFT JOIN vw_realizado_regional_mes AS v
        ON v.tempo_id = m.tempo_id
-      AND v.regional = ______;
+      AND v.regional = r.nome;
 """
 # executar(sql_4b)
 # print(pd.read_sql_query(

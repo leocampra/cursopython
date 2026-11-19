@@ -261,7 +261,12 @@ LEFT JOIN vw_realizado_regional_mes AS v
 #
 # Confira: Joinville 24, Blumenau 23 e Florianópolis 23.
 sql_5 = """
-
+SELECT regional, 
+SUM(CASE WHEN atingimento_pct >= 100 THEN 1 ELSE 0 END) AS meses_meta_batida, 
+COUNT(*) total_meses 
+FROM vw_meta_x_realizado 
+GROUP BY regional 
+ORDER BY meses_meta_batida DESC
 """
 # print(pd.read_sql_query(sql_5, conexao))
 
@@ -294,12 +299,12 @@ WHERE tempo_id = 202512
 """
 # print("Antes:")
 # print(pd.read_sql_query(consulta_dezembro, conexao))
-# conexao.execute("""
-#     INSERT INTO fato_vendas (tempo_id, produto_sk, canal_sk, regional_sk,
-#                              linha_planilha, valor_venda, quantidade_estimada,
-#                              custo_estimado, comissao, margem_estimada)
-#     VALUES (202512, 1, 1, 1, 999999, 10000, 0, 0, 0, 0)
-# """)
+conexao.execute("""
+    INSERT INTO fato_vendas (tempo_id, produto_sk, canal_sk, regional_sk,
+                             linha_planilha, valor_venda, quantidade_estimada,
+                             custo_estimado, comissao, margem_estimada)
+    VALUES (202512, 1, 1, 1, 999999, 10000, 0, 0, 0, 0)
+""")
 # print("Depois da venda de teste:")
 # print(pd.read_sql_query(consulta_dezembro, conexao))
 # conexao.rollback()  # desfaz a venda de teste

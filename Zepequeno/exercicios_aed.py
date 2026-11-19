@@ -43,7 +43,9 @@ pd.set_option("display.float_format", "{:,.2f}".format)
 
 # A view vw_vendas_completas já junta o fato com as dimensões:
 # 1 linha = 1 lançamento de venda da planilha.
+
 df = pd.read_sql_query("SELECT * FROM vw_vendas_completas", conexao)
+
 
 # 16/11/2026
 
@@ -57,24 +59,29 @@ print("Formato (linhas, colunas):", df.shape)
 
 # b) Mostre as 5 primeiras linhas e os tipos de cada coluna.
 #    Dica: df.head() e df.info()
-# Seu código aqui
+print(df.head())
+df.info()
 
 # c) Quantos valores diferentes existem nas colunas produto, canal, regional
 #    e macrorregiao? Dica: df[[...]].nunique()
 #    Confira: produto 2, canal 2, regional 11, macrorregiao 5.
-# Seu código aqui
+print(df[["produto", "canal", "regional", "macrorregiao"]].nunique())
 
 # d) Quantas vendas cada regional tem? Dica: value_counts()
 #    Confira: Joinville 254, Florianópolis 214, Blumenau 213.
-# Seu código aqui
+print(df["regional"].value_counts())
 # Resposta: o que chama atenção nas outras 8 regionais?
+
 
 # e) Algum produto do cadastro (tabela dim_produto) nunca vendeu?
 #    Leia dim_produto e use ~produtos["nome"].isin(df["produto"]).
 #    Confira: 1 produto.
 produtos = pd.read_sql_query("SELECT nome FROM dim_produto", conexao)
-# Seu código aqui
+nunca_venderam = produtos[~produtos["nome"].isin(df["produto"])]
+print("Produtos sem nenhuma venda:", nunca_venderam["nome"].tolist())
 # Resposta: que perguntas você faria ao gestor sobre esse produto?
+#['Pé de Moleque'] — está cadastrado e ativo, mas não tem nenhuma venda.
+#Pergunta para o negócio: produto novo, erro de cadastro ou vendas perdidas?
 
 # =====================================================================
 # EXERCÍCIO 2 — Qualidade: nulos e duplicatas
@@ -82,18 +89,24 @@ produtos = pd.read_sql_query("SELECT nome FROM dim_produto", conexao)
 # =====================================================================
 
 # a) Conte os nulos de cada coluna e o total. Confira: total 0.
-# Seu código aqui
+print(df.isnull().sum())
+print("Total de nulos:", df.isnull().sum().sum()) 
 
 # b) Conte as linhas inteiras duplicadas. Confira: 0.
-# Seu código aqui
+print("Linhas duplicadas:", df.duplicated().sum())
 
 # c) Agora conte as repetições da combinação mês + produto + canal + regional
 #    (df.duplicated(subset=chave)) e mostre algumas delas lado a lado
 #    (keep=False e sort_values(chave)).
 #    Confira: 246 repetições.
 chave = ["tempo_id", "produto", "canal", "regional"]
-# Seu código aqui
-# Resposta: essas 246 linhas são duplicatas que devem ser removidas? Por quê?
+repetidas = df.duplicated(subset=chave).sum()
+print("Repetições de mês+produto+canal+regional:", repetidas)  # 246
+print(df[df.duplicated(subset=chave, keep=False)].sort_values(chave).head(6))
+# Pergunta: essas 246 linhas são duplicatas que devem ser removidas? Por quê?
+#Resposta: não são duplicatas. A planilha só tem a data do mês (sempre dia 1º),
+#então vários lançamentos do mesmo mês caem na mesma combinação. Os valores
+#são diferentes. Duplicata se confirma com regra de negócio, não só com código.
 
 # =====================================================================
 # EXERCÍCIO 3 — Padrões e anomalias no tempo
@@ -102,7 +115,8 @@ chave = ["tempo_id", "produto", "canal", "regional"]
 
 # a) Monte uma tabela com a quantidade de vendas por ano (linhas) e mês
 #    (colunas). Dica: pd.crosstab(df["ano"], df["mes"])
-# Seu código aqui
+tabela_ano_mes = pd.crosstab(df["ano"], df["mes"])
+print(tabela_ano_mes)
 # Resposta: o que acontece no 2º semestre de 2023 e depois de abril de 2026?
 
 # b) Compare com o calendário completo (dim_tempo, 60 meses). O código abaixo
@@ -111,24 +125,45 @@ tempo = pd.read_sql_query("SELECT tempo_id, ano, mes, nome_mes FROM dim_tempo", 
 vendas_por_mes = df.groupby("tempo_id").size().rename("qtd_vendas")
 calendario = tempo.merge(vendas_por_mes, on="tempo_id", how="left")
 calendario["qtd_vendas"] = calendario["qtd_vendas"].fillna(0).astype(int)
+meses_sem_venda = calendario[calendario["qtd_vendas"] == 0]
+print("Meses sem nenhuma venda:", len(meses_sem_venda))         # 12
+print(meses_sem_venda[["tempo_id", "nome_mes"]].to_string(index=False))
+# Jul, Ago, Out, Nov e Dez de 2023 e Mai, Jun, Jul, Ago, Out, Nov e Dez de 2026.
 
 #    Filtre os meses com 0 vendas e os meses com só 1 venda. Depois mostre
 #    as vendas desses meses de 1 venda (colunas venda_sk, tempo_id, produto,
 #    canal, regional, valor_venda).
 #    Confira: 12 meses sem venda; 2 meses com 1 venda (202309 e 202609).
-# Seu código aqui
+meses_com_uma_venda = calendario[calendario["qtd_vendas"] == 1]
+print(meses_com_uma_venda[["tempo_id", "nome_mes", "qtd_vendas"]].to_string(index=False))
+# 202309 e 202609: uma única venda isolada no meio de um buraco.
+print(df[df["tempo_id"].isin([202309, 202609])][["venda_sk", "tempo_id", "produto", "canal", "regional", "valor_venda"]])
 # Resposta: essas vendas isoladas são confiáveis? O que você faria com elas?
+# Anomalia: venda_sk 617 (set/2023) e venda_sk 1 (set/2026). Hipótese: data
+# digitada errada. É para investigar na planilha, não para apagar.
 
 # c) Some o valor_venda por mês do ano (groupby("mes")). Qual mês fatura
 #    mais e qual fatura menos? Dica: idxmax() e idxmin()
 #    Confira: maior = 4 (abril), menor = 9 (setembro).
-# Seu código aqui
+por_mes = df.groupby("mes")["valor_venda"].sum()
+print(por_mes)
+print("Mês com maior faturamento somado: ", por_mes.idxmax())    # 4 (abril)
+print("Mês com menor faturamento somado: ", por_mes.idxmin())    # 9 (setembro)
 
 #    Repita só com os anos completos (2022, 2024 e 2025) e some por semestre.
 #    Dica: anos_completos = df[df["ano"].isin([2022, 2024, 2025])]
 #    Confira: 1º semestre 450.425,35 | 2º semestre 517.289,15.
-# Seu código aqui
+anos_completos = df[df["ano"].isin([2022, 2024, 2025])]
+por_mes_completos = anos_completos.groupby("mes")["valor_venda"].sum()
+print(por_mes_completos)
+print("Mês com maior faturamento (anos completos):", por_mes_completos.idxmax())  # 10 (outubro)
+semestre = (anos_completos["mes"] > 6).map({False: "1º semestre", True: "2º semestre"})
+print(anos_completos.groupby(semestre)["valor_venda"].sum())
 # Resposta: o 2º semestre vende menos mesmo? O que causou a ilusão?
+# Somando todos os anos, setembro (77.172,72) fica com 41 % de abril (188.196,50)
+# e o 2º semestre parece fraco. Nos anos completos é o contrário: o 2º semestre
+# fatura 517.289,15 contra 450.425,35 do 1º, e outubro é o melhor mês.
+# A "queda" vinha da falta de dados, não de um padrão real
 
 # d) Gráfico de linha do faturamento mês a mês, com os meses vazios.
 #    (exemplo resolvido; rode e descreva o que vê)
@@ -217,12 +252,12 @@ partes = rejeitados["registro"].str.split(" | ", regex=False)
 # a) Histograma do valor_venda com linhas da média e da mediana (exemplo resolvido)
 plt.figure(figsize=(8, 4))
 sns.histplot(valor, bins=20, kde=True)
-plt.axvline(valor.mean(), color="red", linestyle="--", label="média")
-plt.axvline(valor.median(), color="green", linestyle=":", label="mediana")
-plt.legend()
-plt.title("Distribuição do valor da venda (limpo)")
-plt.tight_layout()
-plt.show()
+##plt.axvline(valor.mean(), color="red", linestyle="--", label="média")
+##plt.axvline(valor.median(), color="green", linestyle=":", label="mediana")
+##plt.legend()
+##plt.title("Distribuição do valor da venda (limpo)")
+##plt.tight_layout()
+##plt.show()
 # Resposta: a distribuição é simétrica, assimétrica, bimodal ou tem outliers?
 
 # b) Faça o histograma da comissao (bins=30). Depois refaça com hue="canal".

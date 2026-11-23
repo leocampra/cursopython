@@ -48,7 +48,7 @@ df = pd.read_sql_query("SELECT * FROM vw_vendas_completas", conexao)
 
 
 # 16/11/2026
-
+'''
 # =====================================================================
 # EXERCÍCIO 1 — Primeiro contato com os dados
 # Pergunta: o que tem nesta tabela e de onde vêm as vendas?
@@ -382,24 +382,42 @@ metas["ano"] = metas["tempo_id"] // 100
 
 # a) Use describe() no atingimento_pct.
 #    Confira: média 80,84 | mediana 93,71 | máximo 301,86
-# Seu código aqui
+print(metas["atingimento_pct"].describe())
 
 # b) Quantas linhas têm realizado igual a zero? Separe por ano. Depois
 #    recalcule média e mediana do atingimento sem esses zeros.
 #    Confira: 39 linhas (2023: 17 | 2026: 22); sem zeros: média 103,69 | mediana 100,22
-# Seu código aqui
+zerados = metas[metas["realizado"] == 0]
+print("Regional-mês com realizado zero:", len(zerados))
+print(zerados.groupby("ano").size())
 # Resposta: esses zeros são regionais que não venderam nada? Compare com o exercício 3.
+sem_buracos = metas[metas["realizado"] > 0]
+print(f"Média sem os zeros: {sem_buracos['atingimento_pct'].mean():.2f} %")   # 103,69 %
+print(f"Mediana sem os zeros: {sem_buracos['atingimento_pct'].median():.2f} %")  # 100,22 %
+# Eles caem exatamente nos buracos do exercício 3: falta de dado, não venda
+# zero. Em 2026 há metas até dezembro, mas as vendas param em abril (fora a
+# venda isolada de setembro). Contar esses zeros puxa a média para baixo.
+
 
 # c) Quantas linhas passam de 150 % de atingimento? Separe por ano.
 #    Confira: 10 linhas (2022: 1 | 2025: 9)
-# Seu código aqui
+acima_150 = metas[metas["atingimento_pct"] > 150]
+print("Regional-mês acima de 150 %:", len(acima_150))
+print(acima_150.groupby("ano").size()) 
 
 # d) Calcule a meta média por ano e faça um boxplot do atingimento por ano
 #    (sem os zeros), com uma linha em 100 %: plt.axhline(100, color="red")
 #    Confira: 2022 6.072 | 2023 16.736 | 2024 10.083 | 2025 7.649 | 2026 16.100
-# Seu código aqui
+plt.figure(figsize=(9, 4))
+sns.boxplot(data=metas[metas["realizado"] > 0], x="ano", y="atingimento_pct")
+plt.axhline(100, color="red", linestyle="--")
+plt.title("Atingimento da meta por ano (sem os meses vazios)")
+plt.tight_layout()
+plt.show()
 # Resposta: 2025 foi um ano excelente? Que hipótese você levaria ao gestor?
-
+# Hipótese para levar ao gestor: em 2025 as metas foram definidas muito abaixo
+# do histórico, por isso tantos meses passam de 150 %. Não é um "ano excelente".
+'''
 # =====================================================================
 # EXERCÍCIO 8 — Ferramentas de AED automatizada
 # Pergunta: o que a automação encontra sozinha e o que ela deixa passar?
@@ -409,15 +427,20 @@ metas["ano"] = metas["tempo_id"] // 100
 #    from ydata_profiling import ProfileReport
 #    perfil = ProfileReport(df, title="AED — Vendas Zé Pequeno", explorative=True)
 #    perfil.to_file("relatorio_ydata.html")
-# Seu código aqui
+from ydata_profiling import ProfileReport
+
+perfil = ProfileReport(df, title="AED — Vendas Zé Pequeno", explorative=True)
+perfil.to_file("relatorio_ydata.html")
+print("Relatório salvo em relatorio_ydata.html")
+
 
 # b) Gere o relatório do Sweetviz e a comparação entre os dois canais.
-#    import sweetviz as sv
-#    relatorio = sv.analyze(df)
-#    relatorio.show_html("relatorio_sweetviz.html", open_browser=False)
-#    comparacao = sv.compare_intra(df, df["canal"] == "E-commerce", ["E-commerce", "Loja Física"])
-#    comparacao.show_html("sweetviz_canais.html", open_browser=False)
-# Seu código aqui
+import sweetviz as sv
+relatorio = sv.analyze(df)
+relatorio.show_html("relatorio_sweetviz.html", open_browser=False)
+comparacao = sv.compare_intra(df, df["canal"] == "E-commerce", ["E-commerce", "Loja Física"])
+comparacao.show_html("sweetviz_canais.html", open_browser=False)
+
 
 # c) Abra os relatórios e responda:
 # Resposta: quais alertas aparecem na aba Alerts do ydata-profiling?

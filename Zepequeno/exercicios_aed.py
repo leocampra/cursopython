@@ -404,7 +404,7 @@ print(f"Mediana sem os zeros: {sem_buracos['atingimento_pct'].median():.2f} %") 
 acima_150 = metas[metas["atingimento_pct"] > 150]
 print("Regional-mês acima de 150 %:", len(acima_150))
 print(acima_150.groupby("ano").size()) 
-
+'''
 # d) Calcule a meta média por ano e faça um boxplot do atingimento por ano
 #    (sem os zeros), com uma linha em 100 %: plt.axhline(100, color="red")
 #    Confira: 2022 6.072 | 2023 16.736 | 2024 10.083 | 2025 7.649 | 2026 16.100
@@ -417,7 +417,7 @@ plt.show()
 # Resposta: 2025 foi um ano excelente? Que hipótese você levaria ao gestor?
 # Hipótese para levar ao gestor: em 2025 as metas foram definidas muito abaixo
 # do histórico, por isso tantos meses passam de 150 %. Não é um "ano excelente".
-'''
+
 # =====================================================================
 # EXERCÍCIO 8 — Ferramentas de AED automatizada
 # Pergunta: o que a automação encontra sozinha e o que ela deixa passar?

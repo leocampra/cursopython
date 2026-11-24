@@ -40,6 +40,15 @@ exercicio = sns.load_dataset("exercise")  # pulsação de 30 pessoas em 3 moment
 
 sns.set_theme(style="whitegrid")
 
+pasta_graficos = Path(__file__).parent / "graficos_seaborn" / "datasets"
+pasta_graficos.mkdir(parents=True, exist_ok=True)
+
+def mostrar_grafico(nome_arquivo):
+    """Salva o gráfico atual em graficos_seaborn/datasets e exibe na tela."""
+    plt.tight_layout()
+    plt.savefig(pasta_graficos / nome_arquivo, dpi=110, bbox_inches="tight")
+    plt.show()
+    plt.close("all")
 
 # #####################################################################
 # AULA 1 — GRÁFICOS BÁSICOS: LINHA, BARRA E DISPERSÃO (slide 21)
@@ -51,27 +60,42 @@ sns.set_theme(style="whitegrid")
 # =====================================================================
 
 # a) Linha de passageiros por ano (exemplo resolvido)
+
 print(voos.head())
 plt.figure(figsize=(9, 4))
 sns.lineplot(data=voos, x="year", y="passengers", marker="o")
 plt.title("Passageiros por ano")
 plt.xlabel("Ano")
 plt.ylabel("Passageiros (milhares)")
-plt.tight_layout()
-plt.show()
+mostrar_grafico("ex1a_voos_linha.png")
+
 # Resposta: cada ano tem 12 linhas na tabela (uma por mês). O que o ponto de
 #           cada ano representa? E a faixa sombreada em volta da linha?
 
 # b) Refaça mostrando o TOTAL de passageiros do ano, sem a faixa sombreada.
 #    Dica: estimator="sum" e errorbar=None
 #    Confira: 1949 = 1.520 | 1960 = 5.714
-# Seu código aqui
-
+plt.figure(figsize=(9, 4))
+sns.lineplot(data=voos, x="year", y="passengers", estimator="sum", errorbar=None, marker="o" color="#ffffff")
+plt.title("Total de passageiros por ano")
+plt.xlabel("Ano")
+plt.ylabel("Passageiros (milhares)")
+mostrar_grafico("ex1b_voos_total.png")
+total_ano = voos.groupby("year")["passengers"].sum()
+print(f"Total 1949: {total_ano[1949]:,} | 1960: {total_ano[1960]:,}")
 
 # c) Faça uma linha por mês (hue="month"). Use palette="flare" e coloque a
 #    legenda fora do gráfico: plt.legend(bbox_to_anchor=(1.01, 1), loc="upper left")
 #    Confira: o mês com mais passageiros em média é Jul.
-# Seu código aqui
+plt.figure(figsize=(10, 5))
+sns.lineplot(data=voos, x="year", y="passengers", hue="month", palette="dark")
+plt.title("Passageiros por ano, uma linha por mês")
+plt.xlabel("Ano")
+plt.ylabel("Passageiros (milhares)")
+plt.legend(title="Mês", bbox_to_anchor=(1.01, 1), loc="upper left")
+mostrar_grafico("ex1c_voos_mes.png")
+pico = voos.groupby("month", observed=True)["passengers"].mean().idxmax()
+print("Mês com mais passageiros em média:", pico)
 
 # Resposta: além do crescimento, que padrão se repete todo ano?
 
@@ -83,21 +107,40 @@ plt.show()
 # a) Faça um barplot da massa corporal (body_mass_g) por espécie (species),
 #    com título e rótulos.
 #    Confira: Adelie 3.700,66 | Chinstrap 3.733,09 | Gentoo 5.076,02
-# Seu código aqui
+plt.figure(figsize=(7, 4))
+sns.barplot(data=pinguins, x="species", y="body_mass_g")
+plt.title("Massa corporal média por espécie")
+plt.xlabel("Espécie")
+plt.ylabel("Massa corporal (g)")
+mostrar_grafico("ex2a_pinguins_barra.png")
+print(pinguins.groupby("species")["body_mass_g"].mean())
 
 # Resposta: qual espécie é a mais pesada? A barra mostra a soma ou a média?
 #           O que é o traço preto no topo de cada barra?
 
 # b) Separe por sexo com hue="sex" e tire o traço preto (errorbar=None).
 #    Confira: Gentoo macho 5.484,84 g
-# Seu código aqui
+plt.figure(figsize=(7, 4))
+sns.barplot(data=pinguins, x="species", y="body_mass_g", hue="sex", errorbar=None)
+plt.title("Massa corporal média por espécie e sexo")
+plt.xlabel("Espécie")
+plt.ylabel("Massa corporal (g)")
+mostrar_grafico("ex2b_pinguins_sexo.png")
+print(pinguins.groupby(["species", "sex"])["body_mass_g"].mean())
 
 # Resposta: o macho é mais pesado em todas as espécies?
 
 # c) Quantos pinguins de cada espécie há em cada ilha? Use sns.countplot com
 #    x="island" e hue="species".
 #    Confira: Biscoe 168 | Dream 124 | Torgersen 52
-# Seu código aqui
+ordem = pinguins["island"].value_counts().index
+plt.figure(figsize=(7, 4))
+sns.countplot(data=pinguins, x="island", hue="species", order=ordem)
+plt.title("Quantidade de pinguins por ilha e espécie")
+plt.xlabel("Ilha")
+plt.ylabel("Quantidade")
+mostrar_grafico("ex2c_pinguins_ilha.png")
+print(pd.crosstab(pinguins["island"], pinguins["species"]))
 
 # Resposta: por que o countplot não precisa de y? Alguma espécie vive em uma
 #           ilha só?
@@ -111,7 +154,14 @@ plt.show()
 #    massa corporal (body_mass_g, eixo y). Calcule a correlação.
 #    Dica: pinguins["flipper_length_mm"].corr(pinguins["body_mass_g"])
 #    Confira: 0,87
-# Seu código aqui
+plt.figure(figsize=(7, 5))
+sns.scatterplot(data=pinguins, x="flipper_length_mm", y="body_mass_g")
+plt.title("Comprimento da nadadeira x massa corporal")
+plt.xlabel("Nadadeira (mm)")
+plt.ylabel("Massa corporal (g)")
+mostrar_grafico("ex3a_pinguins_dispersao.png")
+r = pinguins["flipper_length_mm"].corr(pinguins["body_mass_g"])
+print(f"Correlação nadadeira x massa: {r:.2f}")
 
 # Resposta: existe relação? Ela é positiva ou negativa, forte ou fraca?
 
@@ -119,7 +169,16 @@ plt.show()
 #    correlação dentro de cada espécie.
 #    Dica: for especie, grupo in pinguins.groupby("species"): ...
 #    Confira: Adelie 0,47 | Chinstrap 0,64 | Gentoo 0,70
-# Seu código aqui
+plt.figure(figsize=(8, 5))
+sns.scatterplot(data=pinguins, x="flipper_length_mm", y="body_mass_g", hue="species", 
+                size="bill_length_mm", alpha=0.7)
+plt.title("Nadadeira x massa por espécie (tamanho = bico)")
+plt.xlabel("Nadadeira (mm)")
+plt.ylabel("Massa corporal (g)")
+plt.legend(bbox_to_anchor=(1.01, 1), loc="upper left")
+mostrar_grafico("ex3b_pinguins_especie.png")
+for especie, grupo in pinguins.groupby("species"):
+    print(f"{especie}: {grupo['flipper_length_mm'].corr(grupo['body_mass_g']):.2f}")
 
 # Resposta: por que a correlação dentro de cada espécie é menor que a do total?
 
@@ -134,6 +193,7 @@ plt.show()
 # =====================================================================
 
 # a) Tips (slide 24, exemplo resolvido)
+'''
 corr_gorjetas = gorjetas.corr(numeric_only=True)
 print(corr_gorjetas)
 plt.figure(figsize=(5, 4))
@@ -141,6 +201,7 @@ sns.heatmap(corr_gorjetas, annot=True, cmap="coolwarm", center=0, linewidths=0.5
 plt.title("Matriz de correlação — Tips")
 plt.tight_layout()
 plt.show()
+'''
 # Resposta: conta e gorjeta andam juntas (0,68). Isso quer dizer que uma
 #           CAUSA a outra?
 

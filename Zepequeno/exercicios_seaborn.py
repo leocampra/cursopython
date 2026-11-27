@@ -65,6 +65,15 @@ metas["ano"] = metas["tempo_id"] // 100
 
 sns.set_theme(style="whitegrid")
 
+pasta_graficos = Path(__file__).parent / "graficos_seaborn" / "datasets"
+pasta_graficos.mkdir(parents=True, exist_ok=True)
+
+def mostrar_grafico(nome_arquivo):
+    """Salva o gráfico atual em graficos_seaborn/datasets e exibe na tela."""
+    plt.tight_layout()
+    plt.savefig(pasta_graficos / nome_arquivo, dpi=110, bbox_inches="tight")
+    plt.show()
+    plt.close("all")
 
 # #####################################################################
 # AULA 1 — GRÁFICOS BÁSICOS: LINHA, BARRA E DISPERSÃO
@@ -74,8 +83,8 @@ sns.set_theme(style="whitegrid")
 # EXERCÍCIO 1 — Gráfico de linha: tendência no tempo
 # Pergunta: a Zé Pequeno está vendendo mais ao longo dos anos?
 # =====================================================================
-
-# a) Valor da venda por ano (exemplo resolvido)
+'''
+# 1a) Valor da venda por ano (exemplo resolvido)
 plt.figure(figsize=(9, 4))
 sns.lineplot(data=df, x="ano", y="valor_venda", marker="o")
 plt.title("Valor da venda por ano")
@@ -90,11 +99,18 @@ plt.show()
 #    Refaça mostrando o FATURAMENTO TOTAL de cada ano, sem a faixa sombreada.
 #    Dica: estimator="sum" e errorbar=None
 #    Confira: 2022 221.780,50 | 2024 405.457,00 (maior) | 2026 196.500,57
-# Seu código aqui
+plt.figure(figsize=(9, 4))
+sns.lineplot(data=df, x="ano", y="valor_venda", estimator="sum", errorbar=None, marker="o")
+plt.title("Valor da venda por ano")
+plt.xlabel("Ano")
+plt.ylabel("Faturamento Total (R$)")
+plt.xticks(range(2022, 2027))
+plt.tight_layout()
+mostrar_grafico("faturamento_total.png")
 
 # Resposta: os dois gráficos contam a mesma história? A queda de 2026 é real?
 
-# b) Mês a mês: rode o jeito ERRADO (exemplo resolvido)
+# 1b) Mês a mês: rode o jeito ERRADO (exemplo resolvido)
 plt.figure(figsize=(11, 4))
 sns.lineplot(data=df, x="tempo_id", y="valor_venda")
 plt.title("ERRADO: tempo_id como número e média por venda")
@@ -104,15 +120,28 @@ plt.show()
 #   Dica: o que acontece entre 202212 e 202301 no eixo x? O lineplot está
 #   somando ou fazendo média? Os meses sem venda aparecem?
 
-# c) Agora faça certo: use a tabela "mensal" (x="periodo", y="faturamento"),
+# 1c) Agora faça certo: use a tabela "mensal" (x="periodo", y="faturamento"),
 #    com marker="o", título e rótulos.
 #    Confira: 60 meses; maior mês 202306 com R$ 55.522,00; 12 meses com zero.
-# Seu código aqui
+plt.figure(figsize=(11, 4))
+sns.lineplot(data=mensal, x="periodo", y="faturamento", marker="o")
+plt.title("Faturamento mensal")
+plt.xlabel("Mês")
+plt.ylabel("Faturamento (R$)")
+plt.tight_layout()
+plt.show()
 
 
-# d) Faça uma linha por ano: tabela mensal, x="mes", y="faturamento", hue="ano",
+# 1d) Faça uma linha por ano: tabela mensal, x="mes", y="faturamento", hue="ano",
 #    palette="deep". Dica: plt.xticks(range(1, 13)) mostra os 12 meses.
-# Seu código aqui
+plt.figure(figsize=(11, 4))
+sns.lineplot(data=mensal, x="mes", y="faturamento", hue="ano", palette="deep" )
+plt.xticks(range(1, 13))
+plt.title(" Faturamento Ano")
+plt.xlabel("Periodo")
+plt.ylabel("Faturamento (R$)")
+plt.tight_layout()
+mostrar_grafico("linha_por_ano.png")
 
 # Resposta: os anos têm o mesmo "patamar"? O que acontece em 2023 e 2026?
 
@@ -121,20 +150,32 @@ plt.show()
 # Pergunta: qual produto, canal e regional vende mais?
 # =====================================================================
 
-# a) Faça um barplot do valor_venda por produto, com título e rótulos.
+# 2a) Faça um barplot do valor_venda por produto, com título e rótulos.
 #    Confira: Paçoca 1.987,59 | Rolhas 2.141,56
-# Seu código aqui
+plt.figure(figsize=(11, 4))
+sns.barplot(data=df, x="produto", y="valor_venda")
+plt.title("Valor por regional")
+plt.xlabel("Produto")
+plt.ylabel("Valor da venda (R$)")
+plt.tight_layout()
+mostrar_grafico("produto_valor_venda.png")
 
 # Resposta: qual produto tem a venda maior? A barra mostra a soma ou a média?
 #           O que é o traço preto no topo de cada barra?
 
-# b) Separe por canal com hue="canal" e tire o traço preto (errorbar=None).
+# 2b) Separe por canal com hue="canal" e tire o traço preto (errorbar=None).
 #    Confira: Paçoca/E-commerce 1.944,25 | Rolhas/Loja Física 2.159,73
-# Seu código aqui
+plt.figure(figsize=(9, 4))
+sns.barplot(data=df, x="produto", y="valor_venda", hue="canal", errorbar=None)
+plt.title("Valor da venda por produto e canal")
+plt.xlabel("Produto")
+plt.ylabel("Valor da venda (R$)")
+plt.tight_layout()
+plt.show()
 
 # Resposta: em qual canal a venda é maior, nos dois produtos?
 
-# c) Rode o barplot por regional abaixo (exemplo resolvido).
+# 2c) Rode o barplot por regional abaixo (exemplo resolvido).
 ordem_qtd = df["regional"].value_counts().index
 plt.figure(figsize=(11, 4))
 sns.barplot(data=df, x="regional", y="valor_venda", order=ordem_qtd, errorbar=None)
@@ -142,56 +183,107 @@ plt.xticks(rotation=45)
 plt.title("Valor por regional")
 plt.tight_layout()
 plt.show()
+mostrar_grafico("ex2c_regional_media.png")
+media_reg = df.groupby("regional")["valor_venda"].mean().sort_values(ascending=False)
+print(media_reg)
 # Resposta: pelo gráfico, qual regional parece a "melhor"? Quantas vendas ela tem?
 
 #    Refaça com estimator="sum", ordenando as barras pelo faturamento total.
 #    Dica: total_reg = df.groupby("regional")["valor_venda"].sum().sort_values(ascending=False)
 #          order=total_reg.index
 #    Confira: Joinville 539.695,47 | Florianópolis 438.976,80 | Blumenau 427.186,80
-# Seu código aqui
+total_reg = df.groupby("regional")["valor_venda"].sum().sort_values(ascending=False)
+plt.figure(figsize=(11, 4))
+sns.barplot(data=df, x="regional", y="valor_venda", order=total_reg.index, estimator="sum", errorbar=None)
+plt.xticks(rotation=45)
+plt.title("Faturamento Por Regional")
+plt.xlabel("Regional")
+plt.ylabel("Faturamento total (R$)")
+mostrar_grafico("Faturameto_por_regional")
+print(total_reg)
 
 # Resposta: qual dos dois gráficos responde "onde a Zé Pequeno vende mais?"
 #           O que o barplot calcula quando você não informa o estimator?
 
-# d) Faturamento por produto (x) e canal (hue), com estimator="sum" e errorbar=None.
+# 2d) Faturamento por produto (x) e canal (hue), com estimator="sum" e errorbar=None.
 #    Confira: Rolhas/Loja Física 388.750,90 (maior) | Paçoca/E-commerce 338.299,37 (menor)
-# Seu código aqui
+
+plt.figure(figsize=(9, 4))
+sns.barplot(data=df, x="produto", y="valor_venda", hue="canal", estimator="sum", errorbar=None)
+plt.title("Faturamento por produto e canal")
+plt.xlabel("Produto")
+plt.ylabel("Faturamento (R$)")
+plt.tight_layout()
+plt.show()
 
 # Resposta: algum canal domina? Onde está a maior diferença?
+
 
 # =====================================================================
 # EXERCÍCIO 3 — Gráfico de dispersão: relação entre duas variáveis
 # Pergunta: quando uma variável aumenta, a outra muda junto?
 # =====================================================================
 
-# a) Dispersão da meta (x) e do realizado (y), usando a tabela metas.
+# 3a) Dispersão da meta (x) e do realizado (y), usando a tabela metas.
 #    Calcule a correlação e conte quantas linhas têm realizado igual a zero.
 #    Dica: metas["meta"].corr(metas["realizado"])
 #    Confira: correlação 0,02 | 39 linhas com zero
-# Seu código aqui
+plt.figure(figsize=(7, 5))
+sns.scatterplot(data=metas, x="meta", y="realizado")
+plt.title("Meta x realizado por regional e mês")
+plt.xlabel("Meta (R$)")
+plt.ylabel("Realizado (R$)")
+mostrar_grafico("ex3a_meta_realizado.png")
+print(f"Correlação meta x realizado: {metas['meta'].corr(metas['realizado']):.2f}")  # 0,02
+print("Linhas com realizado = 0:", (metas["realizado"] == 0).sum())                  # 39
 
 # Resposta: o que é a fileira de pontos deitada lá embaixo? Uma correlação de
 #           0,02 quer dizer que a meta não tem nada a ver com o realizado?
 
-# b) Repita só com os meses que tiveram venda, com hue="regional".
+# 3b) Repita só com os meses que tiveram venda, com hue="regional".
 #    Calcule a correlação geral e a de cada regional.
 #    Dica: com_venda = metas[metas["realizado"] > 0]
 #          for regional, grupo in com_venda.groupby("regional"): ...
 #    Confira: 0,74 | Blumenau 0,83 | Florianópolis 0,74 | Joinville 0,62
-# Seu código aqui
+com_venda = metas[metas["realizado"] > 0]
+plt.figure(figsize=(7, 5))
+sns.scatterplot(data=com_venda, x="meta", y="realizado", hue="regional", alpha=0.8)
+plt.title("Meta x realizado (só meses com venda)")
+plt.xlabel("Meta (R$)")
+plt.ylabel("Realizado (R$)")
+mostrar_grafico("ex3b_meta_realizado_sem_zeros.png")
+
+print(f"Correlação sem os zeros: {com_venda['meta'].corr(com_venda['realizado']):.2f}")  # 0,74
+for regional, grupo in com_venda.groupby("regional"):
+    print(f"{regional}: {grupo['meta'].corr(grupo['realizado']):.2f}")
+
 
 # Resposta: o que mudou na conclusão? O que isso ensina sobre dado faltante?
-
-# c) Dispersão de valor_venda (x) e comissao (y), com hue="canal".
+# Resposta: sem os zeros a correlação vai a 0,74: meta maior, realizado maior.
+# Uma linha de filtro mudou a conclusão. Antes de calcular, olhe o gráfico.
+'''
+# 3c) Dispersão de valor_venda (x) e comissao (y), com hue="canal".
 #    Calcule a correlação total e a de cada canal, e o % médio da comissão
 #    (comissao / valor_venda) em cada canal.
 #    Confira: total 0,32 | cada canal 1,00 | E-commerce 12,0 % | Loja Física 3,5 %
-# Seu código aqui
+
+plt.figure(figsize=(7, 5))
+sns.scatterplot(data=df, x="valor_venda", y="comissao", hue="canal", alpha=0.6)
+plt.title("Valor da venda x comissão")
+plt.xlabel("Valor da venda (R$)")
+plt.ylabel("Comissão (R$)")
+mostrar_grafico("ex3c_valor_comissao.png")
+
+print(f"Correlação total: {df['valor_venda'].corr(df['comissao']):.2f}")  # 0,32
+for canal, grupo in df.groupby("canal"):
+    pct = (grupo["comissao"] / grupo["valor_venda"]).mean() * 100
+    print(f"{canal}: correlação {grupo['valor_venda'].corr(grupo['comissao']):.2f} | comissão {pct:.1f} %")
+
 
 # Resposta: o que são as duas "retas"? Uma correlação de 0,32 quer dizer que a
 #           comissão é "quase aleatória"?
 
-
+'''
 # #####################################################################
 # AULA 2 — CORRELAÇÃO, HEATMAPS E CUSTOMIZAÇÃO
 # #####################################################################
@@ -467,6 +559,6 @@ pasta_figuras.mkdir(exist_ok=True)
 # Por fim, escreva 3 frases para o dono da Zé Pequeno: o que o painel mostra
 # e o que ele deveria fazer. Não use termos técnicos sem explicar.
 # Seu código aqui
-
+'''
 
 conexao.close()

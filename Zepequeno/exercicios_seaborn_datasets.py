@@ -26,6 +26,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import numpy as np
 
 pd.set_option("display.width", 200)
 pd.set_option("display.max_columns", 30)
@@ -49,7 +50,7 @@ def mostrar_grafico(nome_arquivo):
     plt.savefig(pasta_graficos / nome_arquivo, dpi=110, bbox_inches="tight")
     plt.show()
     plt.close("all")
-
+'''
 # #####################################################################
 # AULA 1 — GRÁFICOS BÁSICOS: LINHA, BARRA E DISPERSÃO (slide 21)
 # #####################################################################
@@ -192,8 +193,8 @@ for especie, grupo in pinguins.groupby("species"):
 # Pergunta: quais variáveis andam juntas?
 # =====================================================================
 
-# a) Tips (slide 24, exemplo resolvido)
-'''
+# 4a) Tips (slide 24, exemplo resolvido)
+
 corr_gorjetas = gorjetas.corr(numeric_only=True)
 print(corr_gorjetas)
 plt.figure(figsize=(5, 4))
@@ -201,22 +202,33 @@ sns.heatmap(corr_gorjetas, annot=True, cmap="coolwarm", center=0, linewidths=0.5
 plt.title("Matriz de correlação — Tips")
 plt.tight_layout()
 plt.show()
-'''
+
 # Resposta: conta e gorjeta andam juntas (0,68). Isso quer dizer que uma
 #           CAUSA a outra?
 
-# b) Iris (slide 28). Rode a linha abaixo e veja o erro. Depois corrija,
+# 4b) Iris (slide 28). Rode a linha abaixo e veja o erro. Depois corrija,
 #    calcule a matriz de correlação e faça o heatmap com annot=True e
 #    cmap="viridis". Em seguida, refaça com cmap="coolwarm", center=0,
 #    vmin=-1, vmax=1.
 #    Confira: petal_length x petal_width 0,96 | sepal_width x petal_length -0,43
-# iris.corr()   # <- tire o # para ver o erro
-# Seu código aqui
+try:
+    iris.corr()
+except ValueError as erro:
+    print("iris.corr() dá erro:", erro)  # could not convert string to float: 'setosa'
+
+corr_iris = iris.corr(numeric_only=True)
+print(corr_iris)
+fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+sns.heatmap(corr_iris, annot=True, fmt=".2f", cmap="viridis", ax=axes[0])
+axes[0].set_title("viridis")
+sns.heatmap(corr_iris, annot=True, fmt=".2f", cmap="coolwarm", center=0, vmin=-1, vmax=1, ax=axes[1])
+axes[1].set_title("coolwarm, center=0")
+mostrar_grafico("ex4b_iris.png")
 
 # Resposta: por que o .corr() deu erro?
 # Resposta: em qual das duas paletas dá para ver que -0,43 é negativo?
 
-# c) Titanic (slide 29): quais variáveis têm maior correlação com "survived"?
+# 4c) Titanic (slide 29): quais variáveis têm maior correlação com "survived"?
 #    Primeiro rode as linhas abaixo e veja quantas linhas sobram com dropna():
 print("Linhas:", len(titanic))
 print("Linhas depois de titanic.dropna():", len(titanic.dropna()))
@@ -226,19 +238,35 @@ print(titanic.isnull().sum())
 #    dois heatmaps lado a lado: um com "coolwarm" e outro com "rocket".
 #    Dica: fig, axes = plt.subplots(1, 2, figsize=(13, 5)) e ax=axes[0] / ax=axes[1]
 #    Confira: 714 linhas | pclass -0,36 | fare 0,27
-# Seu código aqui
+
+colunas = ["survived", "pclass", "age", "sibsp", "parch", "fare"]
+titanic_num = titanic[colunas].dropna()
+print("Linhas usadas na correlação:", len(titanic_num))            # 714
+corr_titanic = titanic_num.corr()
+print(corr_titanic["survived"].sort_values())
+# pclass -0,36 | age -0,08 | sibsp -0,02 | parch 0,09 | fare 0,27
+fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+sns.heatmap(corr_titanic, annot=True, fmt=".2f", cmap="coolwarm", center=0, vmin=-1, vmax=1, ax=axes[0])
+axes[0].set_title("coolwarm (divergente)")
+sns.heatmap(corr_titanic, annot=True, fmt=".2f", cmap="rocket", ax=axes[1])
+axes[1].set_title("rocket (sequencial)")
+mostrar_grafico("ex4c_titanic.png")
+print(titanic.groupby("pclass")["survived"].mean())  # 1ª 0,63 | 2ª 0,47 | 3ª 0,24
 
 # Resposta: por que o dropna() na tabela inteira deixou só 182 linhas?
 # Resposta: qual variável é a mais correlacionada com survived? O que o sinal
 #           negativo quer dizer na prática?
 
-# d) O heatmap só usa colunas numéricas. Crie a coluna mulher (1 ou 0) e
+
+# 4d) O heatmap só usa colunas numéricas. Crie a coluna mulher (1 ou 0) e
 #    calcule a correlação dela com survived. Calcule também a taxa de
 #    sobrevivência por sexo.
 #    Dica: titanic["mulher"] = (titanic["sex"] == "female").astype(int)
 #          titanic.groupby("sex")["survived"].mean()
 #    Confira: correlação 0,54 | female 0,74 | male 0,19
-# Seu código aqui
+titanic["mulher"] = (titanic["sex"] == "female").astype(int)
+print(f"Correlação mulher x survived: {titanic['mulher'].corr(titanic['survived']):.2f}")  # 0,54
+print(titanic.groupby("sex")["survived"].mean())  # female 0,74 | male 0,19
 
 # Resposta: qual era a variável mais importante e por que ela não apareceu no
 #           heatmap do item c?
@@ -253,43 +281,90 @@ print(titanic.isnull().sum())
 # Dica: tabela_voos = voos.pivot_table(index="month", columns="year",
 #                                      values="passengers", observed=True)
 # Confira: maior 622 (jul/1960) | menor 104 (nov/1949)
-# Seu código aqui
 
-# Resposta: onde aparece o crescimento? E a sazonalidade?
-# Resposta: por que aqui a paleta é sequencial e não divergente?
+tabela_voos = voos.pivot_table(index="month", columns="year", values="passengers", observed=True)
+print(tabela_voos)
+plt.figure(figsize=(12, 6))
+sns.heatmap(tabela_voos, annot=True, fmt=".0f", cmap="flare", linewidths=0.5,
+            cbar_kws={"label": "Passageiros (milhares)"})
+plt.title("Passageiros por mês e ano")
+plt.xlabel("Ano")
+plt.ylabel("Mês")
+mostrar_grafico("ex5_voos_heatmap.png")
+print("Maior:", tabela_voos.max().max(), "| Menor:", tabela_voos.min().min())
+
+# Pergunta: onde aparece o crescimento? E a sazonalidade?
+# Resposta: o heatmap mostra as duas coisas do exercício 1 numa figura só: as
+# cores escurecem da esquerda para a direita (crescimento) e as linhas de julho
+# e agosto são sempre as mais escuras (sazonalidade).
+# Pegunta: por que aqui a paleta é sequencial e não divergente?
+# Resposta: Paleta sequencial porque
+# o valor só vai de "pouco" a "muito".
+
 
 # =====================================================================
 # EXERCÍCIO 6 — Customização (tips, slide 38)
 # Pergunta: o gráfico conta a história sozinho?
 # =====================================================================
 
-# a) Barplot de total_bill por day, com o tema whitegrid, a paleta "flare",
+# 6a) Barplot de total_bill por day, com o tema whitegrid, a paleta "flare",
 #    título e rótulos nos eixos.
 #    Rode primeiro com palette="flare" sem hue e leia o aviso que aparece.
 #    Depois corrija com hue="day" e legend=False.
 #    Confira: domingo (Sun) 21,41 é a maior média | sexta (Fri) 17,15 a menor
-# Seu código aqui
+sns.set_theme(style="whitegrid")
+plt.figure(figsize=(7, 4))
+sns.barplot(data=gorjetas, x="day", y="total_bill", hue="day", palette="flare", legend=False, errorbar=None)
+plt.title("Domingo tem a maior conta média da semana")
+plt.xlabel("Dia")
+plt.ylabel("Conta média (US$)")
+mostrar_grafico("ex6a_tips_flare.png")
+print(gorjetas.groupby("day", observed=True)["total_bill"].mean())
 
 # Resposta: o que o aviso pede?
+# Resposta: palette sem hue gera o aviso "Passing `palette` without assigning
+# `hue` is deprecated". A correção é hue="day" e legend=False.
 
-# b) Repita o gráfico do item a para cada contexto e compare.
+# 6b) Repita o gráfico do item a para cada contexto e compare.
 #    Dica: for contexto in ["paper", "notebook", "talk", "poster"]:
 #              sns.set_context(contexto) ...
 #    No fim, volte ao padrão: sns.set_context("notebook")
-# Seu código aqui
+for contexto in ["paper", "notebook", "talk", "poster"]:
+    sns.set_context(contexto)
+    plt.figure(figsize=(7, 4))
+    sns.barplot(data=gorjetas, x="day", y="total_bill", hue="day", palette="flare",
+                legend=False, errorbar=None)
+    plt.title(f"Contexto: {contexto}")
+    mostrar_grafico(f"ex6b_contexto_{contexto}.png")
+    sns.set_context("notebook")
 
 # Resposta: o que muda de um contexto para o outro? Qual usar no projetor?
 
-# c) Acrescente ao gráfico do item a uma linha tracejada na média geral
+# 6c) Acrescente ao gráfico do item a uma linha tracejada na média geral
 #    (plt.axhline) e uma anotação apontando para a sexta-feira com o número de
 #    contas desse dia. Troque o título por uma frase com a conclusão.
 #    Dica: (gorjetas["day"] == "Fri").sum()
 #          plt.annotate("texto", xy=(1, 17.4), xytext=(0.2, 24),
 #                       arrowprops={"arrowstyle": "->", "color": "#333333"})
 #    Confira: sexta tem 19 contas
-# Seu código aqui
+media_dia = gorjetas.groupby("day", observed=True)["total_bill"].mean()
+plt.figure(figsize=(7, 4))
+sns.barplot(data=gorjetas, x="day", y="total_bill", hue="day", palette="flare",
+            legend=False, errorbar=None)
+plt.axhline(gorjetas["total_bill"].mean(), color="#555555", linestyle="--", linewidth=1)
+plt.annotate(f"Sexta: só {(gorjetas['day'] == 'Fri').sum()} contas",
+             xy=(1, media_dia["Fri"] + 0.3), xytext=(0.2, 24),
+             arrowprops={"arrowstyle": "->", "color": "#333333", "linewidth": 1.5})
+plt.ylim(0, 27)
+plt.title("Domingo tem a maior conta média; sexta tem poucos dados")
+plt.xlabel("Dia")
+plt.ylabel("Conta média (US$)")
+mostrar_grafico("ex6c_tips_anotacao.png")
 
 # Resposta: por que é importante avisar o leitor sobre a sexta-feira?
+
+# Resposta: sexta tem só 19 contas (contra 87 no sábado). A anotação avisa o
+# leitor para não tirar conclusão forte sobre esse dia.
 
 # =====================================================================
 # EXERCÍCIO 7 — FacetGrid (exercise, slide 39)
@@ -304,9 +379,16 @@ print(titanic.isnull().sum())
 #       g.set_axis_labels("Tempo", "Pulsação (bpm)")
 # Confira: corrida (running) com dieta "no fat" aos 30 min = 140,6
 print(exercicio.head())
-# Seu código aqui
+g = sns.FacetGrid(exercicio, row="diet", col="kind", height=3, aspect=1.2)
+g.map(sns.lineplot, "time", "pulse", marker="o")
+g.set_titles("Dieta: {row_name} | Atividade: {col_name}")
+g.set_axis_labels("Tempo", "Pulsação (bpm)")
+g.figure.suptitle("Pulsação ao longo do tempo por dieta e atividade", y=1.03)
+mostrar_grafico("ex7_exercise_facet.png")
+print(exercicio.groupby(["diet", "kind", "time"], observed=True)["pulse"].mean().unstack())
 
 # Resposta: em qual atividade a pulsação mais sobe? A dieta faz diferença?
+
 # Resposta: as colunas "Unnamed: 0" e "id" servem para a análise?
 
 
@@ -319,26 +401,48 @@ print(exercicio.head())
 # Pergunta: como mostrar várias visões numa figura só?
 # =====================================================================
 
-# a) Tips em 1 linha x 2 colunas: histograma de total_bill à esquerda e
+# 8a) Tips em 1 linha x 2 colunas: histograma de total_bill à esquerda e
 #    boxplot de total_bill por day à direita (slide 44). Um título para cada
 #    gráfico e um título geral.
 #    Dica: fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 #          sns.histplot(..., ax=axes[0]) | axes[0].set_title(...)
 #          fig.suptitle("...")
-# Seu código aqui
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+sns.histplot(data=gorjetas, x="total_bill", ax=axes[0])
+axes[0].set_title("Distribuição do valor da conta")
+axes[0].set_xlabel("Conta (US$)")
+sns.boxplot(data=gorjetas, x="day", y="total_bill", ax=axes[1])
+axes[1].set_title("Conta por dia da semana")
+axes[1].set_xlabel("Dia")
+axes[1].set_ylabel("Conta (US$)")
+fig.suptitle("Gorjetas — visão geral")
+mostrar_grafico("ex8a_tips_subplots.png")
+
 
 # Resposta: o que acontece se você usar plt.title("...") depois dos dois
 #           gráficos? Teste.
 
-# b) Grade 2 x 2 com os 4 tipos de gráfico da semana, cada um com um dataset:
+# 8b) Grade 2 x 2 com os 4 tipos de gráfico da semana, cada um com um dataset:
 #      axes[0, 0] -> linha: passageiros por ano (voos, estimator="sum")
 #      axes[0, 1] -> barra: massa por espécie (pinguins)
 #      axes[1, 0] -> dispersão: total_bill x tip (gorjetas, hue="time")
 #      axes[1, 1] -> heatmap: correlação do tips
-# Seu código aqui
+corr_gorjetas = gorjetas.corr(numeric_only=True)
+fig, axes = plt.subplots(2, 2, figsize=(12, 9))
+sns.lineplot(data=voos, x="year", y="passengers", estimator="sum", errorbar=None, ax=axes[0, 0])
+axes[0, 0].set_title("Linha: passageiros por ano")
+sns.barplot(data=pinguins, x="species", y="body_mass_g", errorbar=None, ax=axes[0, 1])
+axes[0, 1].set_title("Barra: massa por espécie")
+sns.scatterplot(data=gorjetas, x="total_bill", y="tip", hue="time", ax=axes[1, 0])
+axes[1, 0].set_title("Dispersão: conta x gorjeta")
+sns.heatmap(corr_gorjetas, annot=True, cmap="coolwarm", center=0, ax=axes[1, 1])
+axes[1, 1].set_title("Heatmap: correlação Tips")
+fig.suptitle("Os 4 gráficos da semana numa figura só")
+mostrar_grafico("ex8b_grade_2x2.png")
 
 # c) Pairplot dos pinguins com hue="species" e corner=True (slide 45).
-# Seu código aqui
+g = sns.pairplot(pinguins, hue="species", corner=True)
+mostrar_grafico("ex8c_pairplot_pinguins.png")
 
 # Resposta: quantas variáveis numéricas entraram? O que aparece na diagonal?
 #           Qual espécie se separa das outras?
@@ -355,16 +459,39 @@ pasta_figuras.mkdir(exist_ok=True)
 #    fig, ax = plt.subplots(figsize=(8, 5)) e exporte em PNG (dpi=300) e em
 #    SVG, os dois com bbox_inches="tight".
 #    Dica: fig.savefig(pasta_figuras / "pinguins_nadadeira_massa.png", dpi=300, bbox_inches="tight")
-# Seu código aqui
+fig, ax = plt.subplots(figsize=(8, 5))
+sns.scatterplot(data=pinguins, x="flipper_length_mm", y="body_mass_g", hue="species", ax=ax)
+ax.set_title("Pinguins com nadadeira maior são mais pesados")
+ax.set_xlabel("Nadadeira (mm)")
+ax.set_ylabel("Massa corporal (g)")
+fig.savefig(pasta_figuras / "pinguins_nadadeira_massa.png", dpi=300, bbox_inches="tight")
+fig.savefig(pasta_figuras / "pinguins_nadadeira_massa.svg", bbox_inches="tight")
+plt.show()
+plt.close(fig)
+for arquivo in sorted(pasta_figuras.glob("pinguins_nadadeira_massa.*")):
+    print(f"{arquivo.name}: {arquivo.stat().st_size / 1024:,.0f} KB")
 
 # Resposta: qual a diferença entre PNG e SVG? Quando usar cada um?
-
-# b) Exporte um histograma da massa corporal para CADA espécie, com nomes
+'''
+# 9b) Exporte um histograma da massa corporal para CADA espécie, com nomes
 #    descritivos: massa_adelie.png, massa_chinstrap.png, massa_gentoo.png
 #    Dica: for especie in pinguins["species"].unique(): ...
 #          f"massa_{especie.lower()}.png"
 #          no fim de cada volta: plt.close(fig)
 #    Confira: 3 arquivos novos na pasta figuras.
-# Seu código aqui
+pasta_figuras = Path(__file__).parent / "figuras"
+pasta_figuras.mkdir(exist_ok=True)
+
+for especie in pinguins["species"].unique():
+    fig, ax = plt.subplots(figsize=(7, 4))
+    sns.histplot(data=pinguins[pinguins["species"] == especie], x="body_mass_g", ax=ax)
+    ax.set_title(f"Massa corporal — {especie}")
+    ax.set_xlabel("Massa corporal (g)")
+    plt.show()
+    fig.savefig(pasta_figuras / f"massa_{especie.lower()}.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+print("Arquivos na pasta figuras:")
+for arquivo in sorted(pasta_figuras.iterdir()):
+    print("  ", arquivo.name)
 
 # Resposta: por que o savefig tem que vir ANTES do plt.show()?
